@@ -13,6 +13,7 @@ export const SCAFFOLD_NODE_TYPES = [
   'BED',
   'TEAM',
   'USER',
+  'ROLE',
 ] as const
 
 export type ScaffoldNodeType = (typeof SCAFFOLD_NODE_TYPES)[number];
@@ -36,6 +37,16 @@ export interface UserMetadata {
 export interface AttachedDataEntry {
   key: string,
   value: string,
+}
+
+export const SCAFFOLD_CONNECTION_TYPES = ['default', 'reference', 'dependency'] as const
+
+export type ScaffoldConnectionType = (typeof SCAFFOLD_CONNECTION_TYPES)[number]
+
+export interface ScaffoldEdgeData extends Record<string, unknown> {
+  connectionType?: ScaffoldConnectionType,
+  role?: UserRole,
+  attributes?: AttachedDataEntry[],
 }
 
 export interface TreeNode {

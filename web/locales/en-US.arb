@@ -41,6 +41,8 @@
   "nodeType_BED": "Bed",
   "nodeType_TEAM": "Team",
   "nodeType_USER": "User",
+  "nodeType_ROLE": "Role",
+  "delete": "Delete",
   "deleteNodeTitle": "Delete node?",
   "deleteNodeDescription": "This will remove the node and all its connections. This cannot be undone.",
   "email": "Email",
@@ -60,5 +62,10 @@
   "value": "Value",
   "centerView": "Center view",
   "zoomIn": "Zoom in",
-  "zoomOut": "Zoom out"
+  "zoomOut": "Zoom out",
+  "connectionSettingsTitle": "Connection settings",
+  "connectionType": "Connection type",
+  "connectionType_default": "Default",
+  "connectionType_reference": "Reference",
+  "connectionType_dependency": "Dependency"
 }

@@ -14,6 +14,7 @@ const NODE_TYPE_TO_CHIP_COLOR: Record<ScaffoldNodeType, ChipColor> = {
     BED: 'secondary',
     TEAM: 'positive',
     USER: 'warning',
+    ROLE: 'primary',
 }
 
 export function getChipColorForType(type: ScaffoldNodeType): ChipColor {

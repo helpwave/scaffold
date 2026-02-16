@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { Handle, type Node, type NodeProps, Position } from '@xyflow/react'
 import { Chip, IconButton } from '@helpwave/hightide'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import { useScaffoldTranslation } from '../i18n/ScaffoldTranslationContext'
 import { getChipColorForType } from '../lib/scaffoldGraph'
 import type { ScaffoldNodeData } from '../lib/scaffoldGraph'
@@ -10,14 +10,13 @@ import { useNodeActions } from './NodeActionsContext'
 
 function ScaffoldNodeInner({ id, data }: NodeProps<Node<ScaffoldNodeData>>) {
   const t = useScaffoldTranslation()
-  const { onEditNode, onRequestDeleteNode, isRootOrgNode } = useNodeActions()
+  const { onEditNode } = useNodeActions()
   const d = data as ScaffoldNodeData
   const color = getChipColorForType(d.type)
   const typeLabel = t(`nodeType_${d.type}` as keyof ScaffoldTranslationEntries)
-  const showDelete = !isRootOrgNode(id)
   const userSummary =
     d.type === 'USER' && d.user_metadata
-      ? d.user_metadata.email ?? d.user_metadata.role ?? undefined
+      ? d.user_metadata.email ?? undefined
       : undefined
   const showTargetHandle = d.type !== 'ORGANIZATION'
   const showSourceHandle = d.type !== 'USER'
@@ -48,17 +47,6 @@ function ScaffoldNodeInner({ id, data }: NodeProps<Node<ScaffoldNodeData>>) {
             >
               <Pencil className="w-3.5 h-3.5" />
             </IconButton>
-            {showDelete && (
-              <IconButton
-                onClick={(e) => { e.stopPropagation(); onRequestDeleteNode(id) }}
-                aria-label={t('deleteNodeTitle')}
-                title={t('deleteNodeTitle')}
-                size="sm"
-                color="negative"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </IconButton>
-            )}
           </div>
         </div>
       </div>

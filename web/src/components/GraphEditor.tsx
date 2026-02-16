@@ -15,21 +15,25 @@ import {
   ReactFlowProvider,
   Panel
 } from '@xyflow/react'
-import { ConfirmDialog, IconButton, useTheme } from '@helpwave/hightide'
+import { IconButton, useTheme } from '@helpwave/hightide'
 import { Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
 import '@xyflow/react/dist/style.css'
 import { useScaffoldTranslation } from '../i18n/ScaffoldTranslationContext'
 import type { ScaffoldTranslationEntries } from '../i18n/translations'
 import { isScaffoldNodeType, ROOT_ORG_ID, SCAFFOLD_DRAG_TYPE } from '../types/scaffold'
+import type { ScaffoldEdgeData } from '../types/scaffold'
 import type { ScaffoldNodeData } from '../lib/scaffoldGraph'
 import { ScaffoldNode } from './ScaffoldNode'
 import { NamePopUp } from './NamePopUp'
 import { NodeSettingsDialog } from './NodeSettingsDialog'
+import { ConnectionSettingsDialog } from './ConnectionSettingsDialog'
 import { NodeActionsContext } from './NodeActionsContext'
 import type { NodeActionsContextValue } from './NodeActionsContext'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import type { ScaffoldNodeType } from '../types/scaffold'
+
+export type ScaffoldEdge = Edge<ScaffoldEdgeData>
 
 interface PendingDrop {
   position: { x: number, y: number },
@@ -38,9 +42,9 @@ interface PendingDrop {
 
 interface GraphEditorInnerProps {
   nodes: Node<ScaffoldNodeData>[],
-  edges: Edge[],
+  edges: ScaffoldEdge[],
   setNodes: (payload: Node<ScaffoldNodeData>[] | ((prev: Node<ScaffoldNodeData>[]) => Node<ScaffoldNodeData>[])) => void,
-  setEdges: (payload: Edge[] | ((prev: Edge[]) => Edge[])) => void,
+  setEdges: (payload: ScaffoldEdge[] | ((prev: ScaffoldEdge[]) => ScaffoldEdge[])) => void,
   treeError: string | null,
   setTreeError: (msg: string | null) => void,
   fitViewRef?: MutableRefObject<(() => void) | null>,
@@ -74,8 +78,16 @@ function GraphEditorInner({
   const [namePopUpOpen, setNamePopUpOpen] = useState(false)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
   const [settingsNodeId, setSettingsNodeId] = useState<string | null>(null)
-  const [deleteConfirmNodeId, setDeleteConfirmNodeId] = useState<string | null>(null)
+  const [settingsEdgeId, setSettingsEdgeId] = useState<string | null>(null)
   const isDark = resolvedTheme === 'dark'
+
+  const settingsEdge = settingsEdgeId ? edges.find((e) => e.id === settingsEdgeId) : null
+  const settingsEdgeSource = settingsEdge ? nodes.find((n) => n.id === settingsEdge.source) : null
+  const settingsEdgeTarget = settingsEdge ? nodes.find((n) => n.id === settingsEdge.target) : null
+  const settingsEdgeSourceLabel = (settingsEdgeSource?.data as ScaffoldNodeData | undefined)?.name ?? settingsEdge?.source ?? ''
+  const settingsEdgeTargetLabel = (settingsEdgeTarget?.data as ScaffoldNodeData | undefined)?.name ?? settingsEdge?.target ?? ''
+  const settingsEdgeSourceType = (settingsEdgeSource?.data as ScaffoldNodeData | undefined)?.type
+  const settingsEdgeTargetType = (settingsEdgeTarget?.data as ScaffoldNodeData | undefined)?.type
 
   const settingsNode = settingsNodeId ? nodes.find((n) => n.id === settingsNodeId) : null
 
@@ -83,17 +95,18 @@ function GraphEditorInner({
 
   const nodeActionsValue: NodeActionsContextValue = {
     onEditNode: setSettingsNodeId,
-    onRequestDeleteNode: setDeleteConfirmNodeId,
     isRootOrgNode: (id) => id === ROOT_ORG_ID,
   }
 
-  const handleConfirmDelete = useCallback(() => {
-    if (!deleteConfirmNodeId) return
-    setNodes((nds) => nds.filter((n) => n.id !== deleteConfirmNodeId))
-    setEdges((eds) =>
-      eds.filter((e) => e.source !== deleteConfirmNodeId && e.target !== deleteConfirmNodeId))
-    setDeleteConfirmNodeId(null)
-  }, [deleteConfirmNodeId, setNodes, setEdges])
+  const handleDeleteNode = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId))
+      setEdges((eds) =>
+        eds.filter((e) => e.source !== nodeId && e.target !== nodeId))
+      setSettingsNodeId(null)
+    },
+    [setNodes, setEdges]
+  )
 
   const handleNodeSettingsSave = useCallback(
     (nodeId: string, data: Partial<ScaffoldNodeData>) => {
@@ -178,9 +191,48 @@ function GraphEditorInner({
   const onConnect = useCallback(
     (params: Connection) => {
       setTreeError(null)
-      setEdges((eds) => addEdge(params, eds))
+      setEdges((eds) => addEdge({ ...params, data: {} }, eds))
     },
     [setEdges, setTreeError]
+  )
+
+  const removeSelectedEdges = useCallback(() => {
+    setEdges((eds) => eds.filter((e) => !e.selected))
+  }, [setEdges])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement
+      if (target.closest('input') != null || target.closest('textarea') != null || target.closest('[role="dialog"]') != null) {
+        return
+      }
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const hasSelectedEdges = edges.some((e) => e.selected)
+        if (hasSelectedEdges) {
+          event.preventDefault()
+          removeSelectedEdges()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [edges, removeSelectedEdges])
+
+  const handleConnectionSettingsSave = useCallback(
+    (edgeId: string, data: ScaffoldEdgeData) => {
+      setEdges((eds) =>
+        eds.map((e) => (e.id === edgeId ? { ...e, data, selected: false } : e)))
+      setSettingsEdgeId(null)
+    },
+    [setEdges]
+  )
+
+  const handleDeleteEdge = useCallback(
+    (edgeId: string) => {
+      setEdges((eds) => eds.filter((e) => e.id !== edgeId))
+      setSettingsEdgeId(null)
+    },
+    [setEdges]
   )
 
   const nodesWithRootLocked = useMemo(
@@ -190,27 +242,28 @@ function GraphEditorInner({
     [nodes]
   )
 
+  const PRIMARY_STROKE = '#6366f1'
   const roleStroke = (role: string | undefined): string | undefined => {
     if (role === 'admin') return '#ef4444'
     if (role === 'moderator') return '#f97316'
-    if (role === 'viewer') return '#3b82f6'
+    if (role === 'viewer') return '#22c55e'
     return undefined
   }
 
   const edgesWithRoleStyle = useMemo(() => {
-    return edges.map((e) => {
-      const sourceNode = nodes.find((n) => n.id === e.source)
-      const targetNode = nodes.find((n) => n.id === e.target)
-      const sourceData = sourceNode?.data as ScaffoldNodeData | undefined
-      const targetData = targetNode?.data as ScaffoldNodeData | undefined
-      const role = sourceData?.user_metadata?.role ?? targetData?.user_metadata?.role
-      const stroke = roleStroke(role)
+    return edges.map((e: ScaffoldEdge) => {
+      const role = e.data?.role
+      const stroke = e.selected ? PRIMARY_STROKE : roleStroke(role)
       return {
         ...e,
-        style: { ...e.style, strokeWidth: 2.5, ...(stroke ? { stroke } : {}) },
+        style: {
+          ...e.style,
+          strokeWidth: 2.5,
+          ...(stroke != null ? { stroke } : {}),
+        },
       }
     })
-  }, [edges, nodes])
+  }, [edges])
 
   return (
     <NodeActionsContext.Provider value={nodeActionsValue}>
@@ -226,9 +279,11 @@ function GraphEditorInner({
           onEdgesChange={(changes) => setEdges((eds) => applyEdgeChanges(changes, eds))}
           onConnect={onConnect}
           onNodeDoubleClick={(_event, node) => setSettingsNodeId(node.id)}
+          onEdgeDoubleClick={(_event, edge) => setSettingsEdgeId(edge.id)}
+          elementsSelectable
           isValidConnection={isValidConnection}
           nodeTypes={nodeTypes}
-          defaultEdgeOptions={{ style: { strokeWidth: 2.5 } }}
+          defaultEdgeOptions={{ style: { strokeWidth: 2.5 }, data: {} }}
           proOptions={{ hideAttribution: true }}
           fitView
           className={isDark ? 'bg-gray-900 dark' : 'bg-gray-100'}
@@ -272,14 +327,20 @@ function GraphEditorInner({
           nodeData={settingsNode?.data ?? null}
           onClose={() => setSettingsNodeId(null)}
           onSave={handleNodeSettingsSave}
+          onDelete={handleDeleteNode}
+          isRootOrgNode={settingsNodeId === ROOT_ORG_ID}
         />
-        <ConfirmDialog
-          isOpen={deleteConfirmNodeId !== null}
-          titleElement={t('deleteNodeTitle')}
-          description={t('deleteNodeDescription')}
-          confirmType="negative"
-          onCancel={() => setDeleteConfirmNodeId(null)}
-          onConfirm={handleConfirmDelete}
+        <ConnectionSettingsDialog
+          isOpen={settingsEdgeId !== null}
+          edgeId={settingsEdgeId}
+          edgeData={settingsEdge?.data ?? null}
+          sourceLabel={settingsEdgeSourceLabel}
+          targetLabel={settingsEdgeTargetLabel}
+          sourceType={settingsEdgeSourceType}
+          targetType={settingsEdgeTargetType}
+          onClose={() => setSettingsEdgeId(null)}
+          onSave={handleConnectionSettingsSave}
+          onDelete={handleDeleteEdge}
         />
       </div>
     </NodeActionsContext.Provider>
@@ -288,9 +349,9 @@ function GraphEditorInner({
 
 export interface GraphEditorProps {
   nodes: Node<ScaffoldNodeData>[],
-  edges: Edge[],
+  edges: ScaffoldEdge[],
   setNodes: (payload: Node<ScaffoldNodeData>[] | ((prev: Node<ScaffoldNodeData>[]) => Node<ScaffoldNodeData>[])) => void,
-  setEdges: (payload: Edge[] | ((prev: Edge[]) => Edge[])) => void,
+  setEdges: (payload: ScaffoldEdge[] | ((prev: ScaffoldEdge[]) => ScaffoldEdge[])) => void,
   treeError: string | null,
   setTreeError: (msg: string | null) => void,
   fitViewRef?: MutableRefObject<(() => void) | null>,

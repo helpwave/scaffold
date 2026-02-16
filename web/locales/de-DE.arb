@@ -41,6 +41,8 @@
   "nodeType_BED": "Bett",
   "nodeType_TEAM": "Team",
   "nodeType_USER": "Benutzer",
+  "nodeType_ROLE": "Rolle",
+  "delete": "Löschen",
   "deleteNodeTitle": "Knoten löschen?",
   "deleteNodeDescription": "Der Knoten und alle seine Verbindungen werden entfernt. Dies kann nicht rückgängig gemacht werden.",
   "email": "E-Mail",
@@ -60,5 +62,10 @@
   "value": "Wert",
   "centerView": "Ansicht zentrieren",
   "zoomIn": "Vergrößern",
-  "zoomOut": "Verkleinern"
+  "zoomOut": "Verkleinern",
+  "connectionSettingsTitle": "Verbindungs-Einstellungen",
+  "connectionType": "Verbindungstyp",
+  "connectionType_default": "Standard",
+  "connectionType_reference": "Referenz",
+  "connectionType_dependency": "Abhängigkeit"
 }

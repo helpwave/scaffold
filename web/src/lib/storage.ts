@@ -1,12 +1,14 @@
 import type { Node } from '@xyflow/react'
 import type { Edge } from '@xyflow/react'
 import type { ScaffoldNodeData } from './scaffoldGraph'
+import type { ScaffoldEdgeData } from '../types/scaffold'
+import { SCAFFOLD_CONNECTION_TYPES } from '../types/scaffold'
 
 export const SCAFFOLD_STORAGE_KEY = 'scaffold-editor-state'
 
 export interface StoredState {
   nodes: Node<ScaffoldNodeData>[],
-  edges: Edge[],
+  edges: Edge<ScaffoldEdgeData>[],
 }
 
 function isValidOrganizationIds(v: unknown): v is string[] {
@@ -54,10 +56,28 @@ function isValidNode(n: unknown): n is Node<ScaffoldNodeData> {
   )
 }
 
-function isValidEdge(e: unknown): e is Edge {
+const VALID_USER_ROLES = ['viewer', 'moderator', 'admin'] as const
+
+function isValidEdgeData(data: unknown): data is ScaffoldEdgeData {
+  if (!data || typeof data !== 'object') return false
+  const d = data as Record<string, unknown>
+  if (d.connectionType !== undefined) {
+    if (!SCAFFOLD_CONNECTION_TYPES.includes(d.connectionType as never)) return false
+  }
+  if (d.role !== undefined && !VALID_USER_ROLES.includes(d.role as never)) return false
+  if (d.attributes !== undefined) {
+    if (!Array.isArray(d.attributes)) return false
+    if (!d.attributes.every((e: unknown) => e && typeof e === 'object' && typeof (e as { key?: unknown }).key === 'string' && typeof (e as { value?: unknown }).value === 'string')) return false
+  }
+  return true
+}
+
+function isValidEdge(e: unknown): e is Edge<ScaffoldEdgeData> {
   if (!e || typeof e !== 'object') return false
   const o = e as Record<string, unknown>
-  return typeof o.id === 'string' && typeof o.source === 'string' && typeof o.target === 'string'
+  if (typeof o.id !== 'string' || typeof o.source !== 'string' || typeof o.target !== 'string') return false
+  if (o.data !== undefined && !isValidEdgeData(o.data)) return false
+  return true
 }
 
 export function loadStoredState(): StoredState | null {

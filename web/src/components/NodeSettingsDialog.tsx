@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Button, Chip, Dialog, Input } from '@helpwave/hightide'
+import { Button, Dialog, Input } from '@helpwave/hightide'
 import { useScaffoldTranslation } from '../i18n/ScaffoldTranslationContext'
 import type { ScaffoldNodeData } from '../lib/scaffoldGraph'
-import type { AttachedDataEntry, UserMetadata, UserRole } from '../types/scaffold'
-import type { ScaffoldTranslationEntries } from '../i18n/translations'
+import type { AttachedDataEntry, UserMetadata } from '../types/scaffold'
 
 interface NodeSettingsDialogProps {
     isOpen: boolean,
@@ -11,12 +10,8 @@ interface NodeSettingsDialogProps {
     nodeData: ScaffoldNodeData | null,
     onClose: () => void,
     onSave: (nodeId: string, data: Partial<ScaffoldNodeData>) => void,
-}
-
-const USER_ROLES: UserRole[] = ['viewer', 'moderator', 'admin']
-
-function roleLabelKey(role: UserRole): keyof ScaffoldTranslationEntries {
-    return role === 'viewer' ? 'roleViewer' : role === 'moderator' ? 'roleModerator' : 'roleAdmin'
+    onDelete: (nodeId: string) => void,
+    isRootOrgNode: boolean,
 }
 
 export function NodeSettingsDialog({
@@ -25,6 +20,8 @@ export function NodeSettingsDialog({
     nodeData,
     onClose,
     onSave,
+    onDelete,
+    isRootOrgNode,
 }: NodeSettingsDialogProps) {
     const t = useScaffoldTranslation()
     const [organizationIds, setOrganizationIds] = useState<string[]>([])
@@ -32,7 +29,6 @@ export function NodeSettingsDialog({
     const [email, setEmail] = useState('')
     const [firstname, setFirstname] = useState('')
     const [lastname, setLastname] = useState('')
-    const [role, setRole] = useState<UserRole | undefined>(undefined)
     const [street, setStreet] = useState('')
     const [city, setCity] = useState('')
     const [country, setCountry] = useState('')
@@ -48,7 +44,6 @@ export function NodeSettingsDialog({
             setEmail(um?.email ?? '')
             setFirstname(um?.firstname ?? '')
             setLastname(um?.lastname ?? '')
-            setRole(um?.role)
             setStreet(um?.location?.street ?? '')
             setCity(um?.location?.city ?? '')
             setCountry(um?.location?.country ?? '')
@@ -79,13 +74,12 @@ export function NodeSettingsDialog({
                         ? { street: street.trim() || undefined, city: city.trim() || undefined, country: country.trim() || undefined }
                         : undefined
                 const hasAny =
-                    email.trim() || firstname.trim() || lastname.trim() || role || loc
+                    email.trim() || firstname.trim() || lastname.trim() || loc
                 user_metadata = hasAny
                     ? {
                         email: email.trim() || undefined,
                         firstname: firstname.trim() || undefined,
                         lastname: lastname.trim() || undefined,
-                        role,
                         location: loc,
                     }
                     : undefined
@@ -103,6 +97,13 @@ export function NodeSettingsDialog({
     const handleClose = () => {
         setNewIdInput('')
         onClose()
+    }
+
+    const handleDelete = () => {
+        if (nodeId) {
+            onDelete(nodeId)
+            onClose()
+        }
     }
 
     if (!nodeData || !nodeId) return null
@@ -141,23 +142,6 @@ export function NodeSettingsDialog({
                                 onValueChange={setLastname}
                                 placeholder={t('lastname')}
                             />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{t('userRole')}</span>
-                            <div className="flex flex-wrap gap-1.5">
-                                {USER_ROLES.map((r) => (
-                                    <button
-                                        key={r}
-                                        type="button"
-                                        onClick={() => setRole(role === r ? undefined : r)}
-                                        className="cursor-pointer rounded border-0 bg-transparent p-0"
-                                    >
-                                        <Chip size="sm" color={role === r ? 'primary' : 'neutral'}>
-                                            {t(roleLabelKey(r))}
-                                        </Chip>
-                                    </button>
-                                ))}
-                            </div>
                         </div>
                         <div className="flex flex-col gap-1.5 border-t border-gray-200 dark:border-gray-600 pt-2">
                             <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{t('location')}</span>
@@ -213,6 +197,7 @@ export function NodeSettingsDialog({
                             }
                         }}
                         disabled={!newAttachKey.trim()}
+                        title={t('add')}
                     >
                         {t('add')}
                     </Button>
@@ -230,6 +215,7 @@ export function NodeSettingsDialog({
                                         color="negative"
                                         coloringStyle="text"
                                         onClick={() => setAttachedData((prev) => prev.filter((_, i) => i !== index))}
+                                        title={t('remove')}
                                     >
                                         {t('remove')}
                                     </Button>
@@ -252,7 +238,7 @@ export function NodeSettingsDialog({
                             }}
                             placeholder={t('addOrganizationIdPlaceholder')}
                         />
-                        <Button size="sm" onClick={handleAdd} disabled={!newIdInput.trim()}>
+                        <Button size="sm" onClick={handleAdd} disabled={!newIdInput.trim()} title={t('add')}>
                             {t('add')}
                         </Button>
                     </div>
@@ -269,6 +255,7 @@ export function NodeSettingsDialog({
                                         color="negative"
                                         coloringStyle="text"
                                         onClick={() => handleRemove(index)}
+                                        title={t('remove')}
                                     >
                                         {t('remove')}
                                     </Button>
@@ -277,13 +264,26 @@ export function NodeSettingsDialog({
                         </ul>
                     )}
                 </div>
-                <div className="flex gap-2 justify-end">
-                    <Button coloringStyle="text" onClick={handleClose}>
-                        {t('cancel')}
-                    </Button>
-                    <Button onClick={handleSave}>
-                        {t('save')}
-                    </Button>
+                <div className="flex flex-wrap gap-2">
+                    {!isRootOrgNode && (
+                        <Button
+                            size="sm"
+                            color="negative"
+                            coloringStyle="text"
+                            onClick={handleDelete}
+                            title={t('delete')}
+                        >
+                            {t('delete')}
+                        </Button>
+                    )}
+                    <div className="flex gap-2 ml-auto">
+                        <Button coloringStyle="text" onClick={handleClose} title={t('cancel')}>
+                            {t('cancel')}
+                        </Button>
+                        <Button onClick={handleSave} title={t('save')}>
+                            {t('save')}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </Dialog>

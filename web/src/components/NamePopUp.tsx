@@ -45,10 +45,10 @@ export function NamePopUp({ isOpen, onClose, onSubmit, typeLabel }: NamePopUpPro
                     placeholder={t('enterNamePlaceholder')}
                 />
                 <div className="flex gap-2 justify-end mt-3">
-                    <Button coloringStyle="text" onClick={handleClose}>
+                    <Button coloringStyle="text" onClick={handleClose} title={t('cancel')}>
                         {t('cancel')}
                     </Button>
-                    <Button onClick={handleConfirm} disabled={!name.trim()}>
+                    <Button onClick={handleConfirm} disabled={!name.trim()} title={t('add')}>
                         {t('add')}
                     </Button>
                 </div>

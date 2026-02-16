@@ -7,13 +7,13 @@ import { ScaffoldLogo } from './ScaffoldLogo'
 import { SCAFFOLD_NODE_TYPES, SCAFFOLD_DRAG_TYPE } from '../types/scaffold'
 import type { ScaffoldNodeData } from '../lib/scaffoldGraph'
 import type { Node } from '@xyflow/react'
-import type { Edge } from '@xyflow/react'
+import type { ScaffoldEdge } from './GraphEditor'
 import type { TreeNode } from '../types/scaffold'
 import { isScaffoldNodeType } from '../types/scaffold'
 
 interface SidebarProps {
     onExport: () => void,
-    onImport: (nodes: Node<ScaffoldNodeData>[], edges: Edge[]) => void,
+    onImport: (nodes: Node<ScaffoldNodeData>[], edges: ScaffoldEdge[]) => void,
     onClear: () => void,
     importError: string | null,
     setImportError: (msg: string | null) => void,
@@ -103,13 +103,13 @@ export function Sidebar({ onExport, onImport, onClear, importError, setImportErr
                         {importError}
                     </p>
                 )}
-                <Button size="sm" onClick={onExport}>
+                <Button size="sm" onClick={onExport} title={t('exportJson')}>
                     {t('exportJson')}
                 </Button>
-                <Button size="sm" coloringStyle="outline" onClick={handleImportClick}>
+                <Button size="sm" coloringStyle="outline" onClick={handleImportClick} title={t('importJson')}>
                     {t('importJson')}
                 </Button>
-                <Button size="sm" color="negative" coloringStyle="outline" onClick={() => setIsClearDialogOpen(true)}>
+                <Button size="sm" color="negative" coloringStyle="outline" onClick={() => setIsClearDialogOpen(true)} title={t('clear')}>
                     {t('clear')}
                 </Button>
                 <ConfirmDialog

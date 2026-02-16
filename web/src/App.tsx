@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNodesState, useEdgesState } from '@xyflow/react'
 import type { Node } from '@xyflow/react'
-import type { Edge } from '@xyflow/react'
 import { HelpwaveLogo, LanguageDialog, ThemeDialog } from '@helpwave/hightide'
 import { useScaffoldTranslation } from './i18n/ScaffoldTranslationContext'
-import { GraphEditor } from './components/GraphEditor'
+import { GraphEditor, type ScaffoldEdge } from './components/GraphEditor'
 import { Sidebar } from './components/Sidebar'
 import type { ScaffoldNodeData } from './lib/scaffoldGraph'
 import { flowToTree, downloadAsJson, getRootOrganizationNode } from './lib/scaffoldGraph'
@@ -27,7 +26,7 @@ function ensureRootOrgInNodes(nodes: Node<ScaffoldNodeData>[]): Node<ScaffoldNod
   return [getRootOrganizationNode(), ...nodes]
 }
 
-function ensureRootOrgInEdges(edges: Edge[], nodes: Node<ScaffoldNodeData>[]): Edge[] {
+function ensureRootOrgInEdges(edges: ScaffoldEdge[], nodes: Node<ScaffoldNodeData>[]): ScaffoldEdge[] {
   const hasRoot = nodes.some((n) => n.id === ROOT_ORG_ID)
   if (hasRoot) return edges
   const firstOrg = nodes.find((n) => n.data?.type === 'ORGANIZATION')
@@ -43,7 +42,7 @@ function ensureRootOrgInEdges(edges: Edge[], nodes: Node<ScaffoldNodeData>[]): E
 function App() {
   const t = useScaffoldTranslation()
   const [nodes, setNodes] = useNodesState<Node<ScaffoldNodeData>>([getRootOrganizationNode()])
-  const [edges, setEdges] = useEdgesState<Edge>([])
+  const [edges, setEdges] = useEdgesState<ScaffoldEdge>([])
   const [treeError, setTreeError] = useState<string | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const [themeDialogOpen, setThemeDialogOpen] = useState(false)
@@ -81,7 +80,7 @@ function App() {
   }
 
   const handleImport = useCallback(
-    (newNodes: Node<ScaffoldNodeData>[], newEdges: Edge[]) => {
+    (newNodes: Node<ScaffoldNodeData>[], newEdges: ScaffoldEdge[]) => {
       const normalizedNodes = ensureRootOrgInNodes(newNodes)
       const normalizedEdges = ensureRootOrgInEdges(newEdges, newNodes)
       setNodes(normalizedNodes)

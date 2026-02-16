@@ -2,7 +2,6 @@ import { createContext, useContext } from 'react'
 
 export interface NodeActionsContextValue {
   onEditNode: (id: string) => void,
-  onRequestDeleteNode: (id: string) => void,
   isRootOrgNode: (id: string) => boolean,
 }
 
