@@ -1,0 +1,29 @@
+{
+  "@@locale": "de-DE",
+  "onlyOnDesktop": "Nur auf Desktop-Geräten",
+  "helpwaveScaffold": "helpwave scaffold",
+  "pageTitle": "helpwave scaffold",
+  "nodeTypes": "Knotentypen",
+  "exportJson": "JSON exportieren",
+  "importJson": "JSON importieren",
+  "clear": "Löschen",
+  "clearGraphTitle": "Graph löschen?",
+  "clearGraphDescription": "Alle Knoten und Kanten werden entfernt. Dies kann nicht rückgängig gemacht werden.",
+  "invalidJsonOrFormat": "Ungültiges JSON oder Format.",
+  "failedToReadFile": "Datei konnte nicht gelesen werden.",
+  "addNodeTitle": "{type} hinzufügen",
+  "@addNodeTitle": {
+    "placeholders": {
+      "type": {
+        "type": "string"
+      }
+    }
+  },
+  "enterNameForNode": "Gib einen Namen für den neuen Knoten ein.",
+  "name": "Name",
+  "enterNamePlaceholder": "Name eingeben",
+  "cancel": "Abbrechen",
+  "add": "Hinzufügen",
+  "eachNodeOneParent": "Jeder Knoten kann nur einen übergeordneten Knoten haben. Der Graph muss ein Baum bleiben.",
+  "connectionWouldCreateCycle": "Diese Verbindung würde einen Zyklus erzeugen. Der Graph muss ein Baum bleiben."
+}

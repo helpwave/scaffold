@@ -1,0 +1,29 @@
+{
+  "@@locale": "en-US",
+  "onlyOnDesktop": "Only on desktop devices",
+  "helpwaveScaffold": "helpwave scaffold",
+  "pageTitle": "helpwave scaffold",
+  "nodeTypes": "Node types",
+  "exportJson": "Export JSON",
+  "importJson": "Import JSON",
+  "clear": "Clear",
+  "clearGraphTitle": "Clear graph?",
+  "clearGraphDescription": "Remove all nodes and edges. This cannot be undone.",
+  "invalidJsonOrFormat": "Invalid JSON or format.",
+  "failedToReadFile": "Failed to read file.",
+  "addNodeTitle": "Add {type}",
+  "@addNodeTitle": {
+    "placeholders": {
+      "type": {
+        "type": "string"
+      }
+    }
+  },
+  "enterNameForNode": "Enter a name for the new node.",
+  "name": "Name",
+  "enterNamePlaceholder": "Enter name",
+  "cancel": "Cancel",
+  "add": "Add",
+  "eachNodeOneParent": "Each node can have only one parent. The graph must stay a tree.",
+  "connectionWouldCreateCycle": "This connection would create a cycle. The graph must stay a tree."
+}
