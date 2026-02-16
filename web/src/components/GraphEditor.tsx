@@ -21,6 +21,7 @@ import { isScaffoldNodeType, SCAFFOLD_DRAG_TYPE } from '../types/scaffold'
 import type { ScaffoldNodeData } from '../lib/scaffoldGraph'
 import { ScaffoldNode } from './ScaffoldNode'
 import { NamePopUp } from './NamePopUp'
+import { NodeSettingsDialog } from './NodeSettingsDialog'
 import type { ScaffoldNodeType } from '../types/scaffold'
 
 const nodeTypes = { scaffold: ScaffoldNode }
@@ -53,7 +54,21 @@ function GraphEditorInner({
   const { resolvedTheme } = useTheme()
   const [namePopUpOpen, setNamePopUpOpen] = useState(false)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
+  const [settingsNodeId, setSettingsNodeId] = useState<string | null>(null)
   const isDark = resolvedTheme === 'dark'
+
+  const settingsNode = settingsNodeId ? nodes.find((n) => n.id === settingsNodeId) : null
+
+  const handleNodeSettingsSave = useCallback(
+    (nodeId: string, data: Partial<ScaffoldNodeData>) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n
+        )
+      )
+    },
+    [setNodes]
+  )
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -143,6 +158,7 @@ function GraphEditorInner({
         onNodesChange={(changes) => setNodes((nds) => applyNodeChanges<Node<ScaffoldNodeData>>(changes, nds))}
         onEdgesChange={(changes) => setEdges((eds) => applyEdgeChanges(changes, eds))}
         onConnect={onConnect}
+        onNodeDoubleClick={(_event, node) => setSettingsNodeId(node.id)}
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes as NodeTypes}
         defaultEdgeOptions={{ style: { strokeWidth: 2.5 } }}
@@ -165,6 +181,13 @@ function GraphEditorInner({
         }}
         onSubmit={handleNameSubmit}
         nodeType={pendingDrop?.type ?? 'HOSPITAL'}
+      />
+      <NodeSettingsDialog
+        isOpen={settingsNodeId !== null}
+        nodeId={settingsNodeId}
+        nodeData={settingsNode?.data ?? null}
+        onClose={() => setSettingsNodeId(null)}
+        onSave={handleNodeSettingsSave}
       />
     </div>
   )

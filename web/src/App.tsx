@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNodesState, useEdgesState } from '@xyflow/react'
 import type { Node } from '@xyflow/react'
 import type { Edge } from '@xyflow/react'
-import { HelpwaveLogo } from '@helpwave/hightide'
+import { DialogRoot, HelpwaveLogo, LanguageDialog, ThemeDialog } from '@helpwave/hightide'
 import { useScaffoldTranslation } from './i18n/ScaffoldTranslationContext'
 import { GraphEditor } from './components/GraphEditor'
 import { Sidebar } from './components/Sidebar'
@@ -20,6 +20,8 @@ function App() {
   const [edges, setEdges] = useEdgesState<Edge>([])
   const [treeError, setTreeError] = useState<string | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
+  const [themeDialogOpen, setThemeDialogOpen] = useState(false)
+  const [localeDialogOpen, setLocaleDialogOpen] = useState(false)
   const initDone = useRef(false)
 
   useEffect(() => {
@@ -76,31 +78,49 @@ function App() {
         </p>
       </div>
       <div className="hidden md:flex flex-col h-screen w-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
-        <div className="fixed top-4 right-4 flex gap-2 z-[1000]">
-          <ThemeSwitcher />
-          <LanguageSwitcher />
-        </div>
-        <div className="relative flex-1 min-h-0 min-w-0">
-          <main className="absolute inset-0">
-            <GraphEditor
-              nodes={nodes}
-              edges={edges}
-              setNodes={setNodes}
-              setEdges={setEdges}
-              treeError={treeError}
-              setTreeError={setTreeError}
-            />
-          </main>
-          <div className="absolute left-0 top-0 bottom-0 z-10 flex items-stretch">
-            <Sidebar
-              onExport={handleExport}
-              onImport={handleImport}
-              onClear={handleClear}
-              importError={importError}
-              setImportError={setImportError}
-            />
+        <DialogRoot
+          isOpen={themeDialogOpen || localeDialogOpen}
+          onIsOpenChange={(open) => {
+            if (!open) {
+              setThemeDialogOpen(false)
+              setLocaleDialogOpen(false)
+            }
+          }}
+        >
+          <div className="fixed top-4 right-4 flex gap-2 z-[1000]">
+            <ThemeSwitcher onOpen={() => setThemeDialogOpen(true)} />
+            <LanguageSwitcher onOpen={() => setLocaleDialogOpen(true)} />
           </div>
-        </div>
+          <ThemeDialog
+            isOpen={themeDialogOpen}
+            onClose={() => setThemeDialogOpen(false)}
+          />
+          <LanguageDialog
+            isOpen={localeDialogOpen}
+            onClose={() => setLocaleDialogOpen(false)}
+          />
+          <div className="relative flex-1 min-h-0 min-w-0">
+            <main className="absolute inset-0">
+              <GraphEditor
+                nodes={nodes}
+                edges={edges}
+                setNodes={setNodes}
+                setEdges={setEdges}
+                treeError={treeError}
+                setTreeError={setTreeError}
+              />
+            </main>
+            <div className="absolute left-0 top-0 bottom-0 z-10 flex items-stretch">
+              <Sidebar
+                onExport={handleExport}
+                onImport={handleImport}
+                onClear={handleClear}
+                importError={importError}
+                setImportError={setImportError}
+              />
+            </div>
+          </div>
+        </DialogRoot>
       </div>
     </>
   )

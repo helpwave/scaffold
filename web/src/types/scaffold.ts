@@ -1,6 +1,8 @@
 export const SCAFFOLD_DRAG_TYPE = 'application/x-scaffold-node-type'
 
 export const SCAFFOLD_NODE_TYPES = [
+  'ORGANIZATION',
+  'NETWORK',
   'HOSPITAL',
   'PRACTICE',
   'CLINIC',
@@ -16,6 +18,7 @@ export type ScaffoldNodeType = (typeof SCAFFOLD_NODE_TYPES)[number];
 export interface TreeNode {
   name: string,
   type: ScaffoldNodeType,
+  organization_ids?: string[],
   children?: TreeNode[],
 }
 

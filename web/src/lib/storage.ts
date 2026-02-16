@@ -9,16 +9,22 @@ export interface StoredState {
   edges: Edge[],
 }
 
+function isValidOrganizationIds(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every((item): item is string => typeof item === 'string')
+}
+
 function isValidNode(n: unknown): n is Node<ScaffoldNodeData> {
   if (!n || typeof n !== 'object') return false
   const o = n as Record<string, unknown>
+  const data = o.data as Record<string, unknown> | null
+  if (!data || typeof data !== 'object') return false
+  const orgIds = data.organization_ids
+  if (orgIds !== undefined && !isValidOrganizationIds(orgIds)) return false
   return (
     typeof o.id === 'string' &&
     typeof o.type === 'string' &&
-    o.data != null &&
-    typeof o.data === 'object' &&
-    typeof (o.data as Record<string, unknown>).name === 'string' &&
-    typeof (o.data as Record<string, unknown>).type === 'string' &&
+    typeof data.name === 'string' &&
+    typeof data.type === 'string' &&
     o.position != null &&
     typeof (o.position as { x: number, y: number }).x === 'number' &&
     typeof (o.position as { x: number, y: number }).y === 'number'

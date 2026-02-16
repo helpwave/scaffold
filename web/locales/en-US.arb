@@ -25,5 +25,10 @@
   "cancel": "Cancel",
   "add": "Add",
   "eachNodeOneParent": "Each node can have only one parent. The graph must stay a tree.",
-  "connectionWouldCreateCycle": "This connection would create a cycle. The graph must stay a tree."
+  "connectionWouldCreateCycle": "This connection would create a cycle. The graph must stay a tree.",
+  "nodeSettingsTitle": "Node settings",
+  "organizationIds": "Organization IDs",
+  "addOrganizationIdPlaceholder": "Add ID",
+  "remove": "Remove",
+  "save": "Save"
 }

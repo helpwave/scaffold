@@ -3,14 +3,16 @@ import type { Node, Edge } from '@xyflow/react'
 import type { ScaffoldNodeType, TreeNode } from '../types/scaffold'
 
 const NODE_TYPE_TO_CHIP_COLOR: Record<ScaffoldNodeType, ChipColor> = {
-  HOSPITAL: 'primary',
-  PRACTICE: 'secondary',
-  CLINIC: 'secondary',
-  WARD: 'positive',
-  ROOM: 'warning',
-  BED: 'negative',
-  TEAM: 'neutral',
-  USER: 'neutral',
+  ORGANIZATION: 'primary',
+  NETWORK: 'secondary',
+  HOSPITAL: 'positive',
+  PRACTICE: 'warning',
+  CLINIC: 'negative',
+  WARD: 'neutral',
+  ROOM: 'primary',
+  BED: 'secondary',
+  TEAM: 'positive',
+  USER: 'warning',
 }
 
 export function getChipColorForType(type: ScaffoldNodeType): ChipColor {
@@ -20,6 +22,7 @@ export function getChipColorForType(type: ScaffoldNodeType): ChipColor {
 export interface ScaffoldNodeData extends Record<string, unknown> {
   name: string,
   type: ScaffoldNodeType,
+  organization_ids?: string[],
 }
 
 const HORIZONTAL_GAP = 220
@@ -36,11 +39,19 @@ function layoutTree(
 ): { width: number, height: number } {
   const id = `node-${path}`
   idByPath.set(path, id)
+  const organizationIds = Array.isArray(node.organization_ids)
+    ? node.organization_ids.filter((val): val is string => typeof val === 'string')
+    : undefined
+  const data: ScaffoldNodeData = {
+    name: node.name,
+    type: node.type,
+    ...(organizationIds && organizationIds.length > 0 ? { organization_ids: organizationIds } : {}),
+  }
   nodes.push({
     id,
     type: 'scaffold',
     position: { x, y },
-    data: { name: node.name, type: node.type },
+    data,
   })
 
   if (!node.children || node.children.length === 0) {
@@ -117,18 +128,36 @@ export function flowToTree(
     const node = nodeById.get(nodeId)
     if (!node) throw new Error(`Node ${nodeId} not found`)
     const childIds = childrenBySource.get(nodeId) ?? []
-    return {
+    const organizationIds = node.data.organization_ids
+    const treeNode: TreeNode = {
       name: node.data.name,
       type: node.data.type,
+      ...(organizationIds && organizationIds.length > 0 ? { organization_ids: organizationIds } : {}),
       children: childIds.length > 0 ? childIds.map(build) : undefined,
     }
+    return treeNode
   }
 
   return roots.map((r) => build(r.id))
 }
 
+function treeNodeForExport(node: TreeNode): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    name: node.name,
+    type: node.type,
+  }
+  if (node.organization_ids && node.organization_ids.length > 0) {
+    out.organization_ids = node.organization_ids
+  }
+  if (node.children && node.children.length > 0) {
+    out.children = node.children.map(treeNodeForExport)
+  }
+  return out
+}
+
 export function downloadAsJson(data: TreeNode | TreeNode[]): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
+  const serializable = Array.isArray(data) ? data.map(treeNodeForExport) : treeNodeForExport(data)
+  const blob = new Blob([JSON.stringify(serializable, null, 2)], {
     type: 'application/json',
   })
   const url = URL.createObjectURL(blob)

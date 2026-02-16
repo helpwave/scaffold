@@ -11,6 +11,7 @@ export type ScaffoldTranslationLocales = typeof scaffoldTranslationLocales[numbe
 export type ScaffoldTranslationEntries = {
   'add': string,
   'addNodeTitle': (values: { type: string }) => string,
+  'addOrganizationIdPlaceholder': string,
   'cancel': string,
   'clear': string,
   'clearGraphDescription': string,
@@ -25,9 +26,13 @@ export type ScaffoldTranslationEntries = {
   'importJson': string,
   'invalidJsonOrFormat': string,
   'name': string,
+  'nodeSettingsTitle': string,
   'nodeTypes': string,
   'onlyOnDesktop': string,
+  'organizationIds': string,
   'pageTitle': string,
+  'remove': string,
+  'save': string,
 }
 
 export const scaffoldTranslation: Translation<ScaffoldTranslationLocales, Partial<ScaffoldTranslationEntries>> = {
@@ -36,6 +41,7 @@ export const scaffoldTranslation: Translation<ScaffoldTranslationLocales, Partia
     'addNodeTitle': ({ type }): string => {
       return `${type} hinzufügen`
     },
+    'addOrganizationIdPlaceholder': `ID hinzufügen`,
     'cancel': `Abbrechen`,
     'clear': `Löschen`,
     'clearGraphDescription': `Alle Knoten und Kanten werden entfernt. Dies kann nicht rückgängig gemacht werden.`,
@@ -50,15 +56,20 @@ export const scaffoldTranslation: Translation<ScaffoldTranslationLocales, Partia
     'importJson': `JSON importieren`,
     'invalidJsonOrFormat': `Ungültiges JSON oder Format.`,
     'name': `Name`,
+    'nodeSettingsTitle': `Knoten-Einstellungen`,
     'nodeTypes': `Knotentypen`,
     'onlyOnDesktop': `Nur auf Desktop-Geräten`,
-    'pageTitle': `helpwave scaffold`
+    'organizationIds': `Organisations-IDs`,
+    'pageTitle': `helpwave scaffold`,
+    'remove': `Entfernen`,
+    'save': `Speichern`
   },
   'en-US': {
     'add': `Add`,
     'addNodeTitle': ({ type }): string => {
       return `Add ${type}`
     },
+    'addOrganizationIdPlaceholder': `Add ID`,
     'cancel': `Cancel`,
     'clear': `Clear`,
     'clearGraphDescription': `Remove all nodes and edges. This cannot be undone.`,
@@ -73,9 +84,13 @@ export const scaffoldTranslation: Translation<ScaffoldTranslationLocales, Partia
     'importJson': `Import JSON`,
     'invalidJsonOrFormat': `Invalid JSON or format.`,
     'name': `Name`,
+    'nodeSettingsTitle': `Node settings`,
     'nodeTypes': `Node types`,
     'onlyOnDesktop': `Only on desktop devices`,
-    'pageTitle': `helpwave scaffold`
+    'organizationIds': `Organization IDs`,
+    'pageTitle': `helpwave scaffold`,
+    'remove': `Remove`,
+    'save': `Save`
   }
 }
 

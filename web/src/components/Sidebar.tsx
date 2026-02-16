@@ -74,7 +74,7 @@ export function Sidebar({ onExport, onImport, onClear, importError, setImportErr
         <aside className="min-w-[200px] shrink-0 flex flex-col h-[calc(100%-2rem)] my-4 ml-4 mr-2 bg-white dark:bg-[#0a0a0a] dark:border-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md p-5">
             <div className="pb-6 flex items-center gap-3">
                 <ScaffoldLogo />
-                <span className="typography-headline-lg truncate" style={{ color: '#7b4cd9' }}>
+                <span className="typography-headline-md truncate" style={{ color: '#7b4cd9' }}>
                     {t('helpwaveScaffold')}
                 </span>
             </div>

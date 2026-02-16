@@ -57,6 +57,7 @@ createRoot(document.getElementById('root')!).render(
     <HightideProvider
       theme={{ initialTheme: getInitialTheme() }}
       locale={{
+        locale: 'system',
         defaultLocale: getStoredLocale(),
         onChangedLocale: (locale) => localStorage.setItem(LOCALE_KEY, locale),
       }}
