@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Button, Chip, ConfirmDialog } from '@helpwave/hightide'
 import { useScaffoldTranslation } from '../i18n/ScaffoldTranslationContext'
+import type { ScaffoldTranslationEntries } from '../i18n/translations'
 import { getChipColorForType, treeToFlow } from '../lib/scaffoldGraph'
 import { ScaffoldLogo } from './ScaffoldLogo'
 import { SCAFFOLD_NODE_TYPES, SCAFFOLD_DRAG_TYPE } from '../types/scaffold'
@@ -16,6 +17,7 @@ interface SidebarProps {
     onClear: () => void,
     importError: string | null,
     setImportError: (msg: string | null) => void,
+    hasRootOrg: boolean,
 }
 
 function parseTreeFile(raw: unknown): TreeNode[] {
@@ -30,7 +32,7 @@ function parseTreeFile(raw: unknown): TreeNode[] {
     return []
 }
 
-export function Sidebar({ onExport, onImport, onClear, importError, setImportError }: SidebarProps) {
+export function Sidebar({ onExport, onImport, onClear, importError, setImportError, hasRootOrg }: SidebarProps) {
     const t = useScaffoldTranslation()
     const inputRef = useRef<HTMLInputElement>(null)
     const [isClearDialogOpen, setIsClearDialogOpen] = useState(false)
@@ -79,10 +81,10 @@ export function Sidebar({ onExport, onImport, onClear, importError, setImportErr
                 </span>
             </div>
             <div className="pt-2 pb-1">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('nodeTypes')}</span>
+                <span className="typography-headline-sm">{t('nodeTypes')}</span>
             </div>
             <div className="flex-1 overflow-auto pt-4 flex flex-col gap-1.5">
-                {SCAFFOLD_NODE_TYPES.map((type) => (
+                {SCAFFOLD_NODE_TYPES.filter((type) => type !== 'ORGANIZATION' || !hasRootOrg).map((type) => (
                     <div
                         key={type}
                         draggable
@@ -90,7 +92,7 @@ export function Sidebar({ onExport, onImport, onClear, importError, setImportErr
                         className="cursor-grab active:cursor-grabbing rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-2.5 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 select-none"
                     >
                         <Chip color={getChipColorForType(type)} size="sm">
-                            {type}
+                            {t(`nodeType_${type}` as keyof ScaffoldTranslationEntries)}
                         </Chip>
                     </div>
                 ))}

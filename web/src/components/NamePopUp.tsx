@@ -1,64 +1,58 @@
 import { useState } from 'react'
-import { Button, Dialog, DialogRoot, Input } from '@helpwave/hightide'
+import { Button, Dialog, Input } from '@helpwave/hightide'
 import { useScaffoldTranslation } from '../i18n/ScaffoldTranslationContext'
-import type { ScaffoldNodeType } from '../types/scaffold'
 
 interface NamePopUpProps {
-  isOpen: boolean,
-  onClose: () => void,
-  onSubmit: (name: string) => void,
-  nodeType: ScaffoldNodeType,
+    isOpen: boolean,
+    onClose: () => void,
+    onSubmit: (name: string) => void,
+    typeLabel: string,
 }
 
-export function NamePopUp({ isOpen, onClose, onSubmit, nodeType }: NamePopUpProps) {
-  const t = useScaffoldTranslation()
-  const [name, setName] = useState('')
+export function NamePopUp({ isOpen, onClose, onSubmit, typeLabel }: NamePopUpProps) {
+    const t = useScaffoldTranslation()
+    const [name, setName] = useState('')
 
-  const handleConfirm = () => {
-    const trimmed = name.trim()
-    if (trimmed) {
-      onSubmit(trimmed)
-      setName('')
-      onClose()
+    const handleConfirm = () => {
+        const trimmed = name.trim()
+        if (trimmed) {
+            onSubmit(trimmed)
+            setName('')
+            onClose()
+        }
     }
-  }
 
-  const handleClose = () => {
-    setName('')
-    onClose()
-  }
+    const handleClose = () => {
+        setName('')
+        onClose()
+    }
 
-  return (
-    <DialogRoot
-      isOpen={isOpen}
-      onIsOpenChange={(open) => {
-        if (!open) handleClose()
-      }}
-      isModal
-    >
-      <Dialog
-        titleElement={t('addNodeTitle', { type: nodeType })}
-        description={t('enterNameForNode')}
-        onClose={handleClose}
-      >
-        <div className="flex flex-col gap-3">
-          <Input
-            aria-label={t('name')}
-            value={name}
-            onValueChange={setName}
-            onEditComplete={(v) => v && handleConfirm()}
-            placeholder={t('enterNamePlaceholder')}
-          />
-          <div className="flex gap-2 justify-end mt-3">
-            <Button coloringStyle="text" onClick={handleClose}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={handleConfirm} disabled={!name.trim()}>
-              {t('add')}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
-    </DialogRoot>
-  )
+    if (!isOpen) return null
+
+    return (
+        <Dialog
+            titleElement={t('addNodeTitle', { type: typeLabel })}
+            description={t('enterNameForNode')}
+            onClose={handleClose}
+            isOpen={isOpen}
+        >
+            <div className="flex flex-col gap-3">
+                <Input
+                    aria-label={t('name')}
+                    value={name}
+                    onValueChange={setName}
+                    onEditComplete={(v) => v && handleConfirm()}
+                    placeholder={t('enterNamePlaceholder')}
+                />
+                <div className="flex gap-2 justify-end mt-3">
+                    <Button coloringStyle="text" onClick={handleClose}>
+                        {t('cancel')}
+                    </Button>
+                    <Button onClick={handleConfirm} disabled={!name.trim()}>
+                        {t('add')}
+                    </Button>
+                </div>
+            </div>
+        </Dialog>
+    )
 }

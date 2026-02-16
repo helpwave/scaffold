@@ -1,126 +1,291 @@
 import { useEffect, useState } from 'react'
-import { Button, Dialog, DialogRoot, Input } from '@helpwave/hightide'
+import { Button, Chip, Dialog, Input } from '@helpwave/hightide'
 import { useScaffoldTranslation } from '../i18n/ScaffoldTranslationContext'
 import type { ScaffoldNodeData } from '../lib/scaffoldGraph'
+import type { AttachedDataEntry, UserMetadata, UserRole } from '../types/scaffold'
+import type { ScaffoldTranslationEntries } from '../i18n/translations'
 
 interface NodeSettingsDialogProps {
-  isOpen: boolean,
-  nodeId: string | null,
-  nodeData: ScaffoldNodeData | null,
-  onClose: () => void,
-  onSave: (nodeId: string, data: Partial<ScaffoldNodeData>) => void,
+    isOpen: boolean,
+    nodeId: string | null,
+    nodeData: ScaffoldNodeData | null,
+    onClose: () => void,
+    onSave: (nodeId: string, data: Partial<ScaffoldNodeData>) => void,
+}
+
+const USER_ROLES: UserRole[] = ['viewer', 'moderator', 'admin']
+
+function roleLabelKey(role: UserRole): keyof ScaffoldTranslationEntries {
+    return role === 'viewer' ? 'roleViewer' : role === 'moderator' ? 'roleModerator' : 'roleAdmin'
 }
 
 export function NodeSettingsDialog({
-  isOpen,
-  nodeId,
-  nodeData,
-  onClose,
-  onSave,
+    isOpen,
+    nodeId,
+    nodeData,
+    onClose,
+    onSave,
 }: NodeSettingsDialogProps) {
-  const t = useScaffoldTranslation()
-  const [organizationIds, setOrganizationIds] = useState<string[]>([])
-  const [newIdInput, setNewIdInput] = useState('')
+    const t = useScaffoldTranslation()
+    const [organizationIds, setOrganizationIds] = useState<string[]>([])
+    const [newIdInput, setNewIdInput] = useState('')
+    const [email, setEmail] = useState('')
+    const [firstname, setFirstname] = useState('')
+    const [lastname, setLastname] = useState('')
+    const [role, setRole] = useState<UserRole | undefined>(undefined)
+    const [street, setStreet] = useState('')
+    const [city, setCity] = useState('')
+    const [country, setCountry] = useState('')
+    const [attachedData, setAttachedData] = useState<AttachedDataEntry[]>([])
+    const [newAttachKey, setNewAttachKey] = useState('')
+    const [newAttachValue, setNewAttachValue] = useState('')
 
-  useEffect(() => {
-    if (isOpen && nodeData) {
-      setOrganizationIds(nodeData.organization_ids ?? [])
-      setNewIdInput('')
+    useEffect(() => {
+        if (isOpen && nodeData) {
+            setOrganizationIds(nodeData.organization_ids ?? [])
+            setNewIdInput('')
+            const um = nodeData.user_metadata
+            setEmail(um?.email ?? '')
+            setFirstname(um?.firstname ?? '')
+            setLastname(um?.lastname ?? '')
+            setRole(um?.role)
+            setStreet(um?.location?.street ?? '')
+            setCity(um?.location?.city ?? '')
+            setCountry(um?.location?.country ?? '')
+            setAttachedData(nodeData.attached_data ?? [])
+            setNewAttachKey('')
+            setNewAttachValue('')
+        }
+    }, [isOpen, nodeData])
+
+    const handleAdd = () => {
+        const trimmed = newIdInput.trim()
+        if (trimmed && !organizationIds.includes(trimmed)) {
+            setOrganizationIds((prev) => [...prev, trimmed])
+            setNewIdInput('')
+        }
     }
-  }, [isOpen, nodeData])
 
-  const handleAdd = () => {
-    const trimmed = newIdInput.trim()
-    if (trimmed && !organizationIds.includes(trimmed)) {
-      setOrganizationIds((prev) => [...prev, trimmed])
-      setNewIdInput('')
+    const handleRemove = (index: number) => {
+        setOrganizationIds((prev) => prev.filter((_, i) => i !== index))
     }
-  }
 
-  const handleRemove = (index: number) => {
-    setOrganizationIds((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const handleSave = () => {
-    if (nodeId && nodeData) {
-      onSave(nodeId, {
-        ...nodeData,
-        organization_ids: organizationIds.length > 0 ? organizationIds : undefined,
-      })
-      onClose()
+    const handleSave = () => {
+        if (nodeId && nodeData) {
+            let user_metadata: UserMetadata | undefined = nodeData.user_metadata
+            if (nodeData.type === 'USER') {
+                const loc =
+                    street.trim() || city.trim() || country.trim()
+                        ? { street: street.trim() || undefined, city: city.trim() || undefined, country: country.trim() || undefined }
+                        : undefined
+                const hasAny =
+                    email.trim() || firstname.trim() || lastname.trim() || role || loc
+                user_metadata = hasAny
+                    ? {
+                        email: email.trim() || undefined,
+                        firstname: firstname.trim() || undefined,
+                        lastname: lastname.trim() || undefined,
+                        role,
+                        location: loc,
+                    }
+                    : undefined
+            }
+            onSave(nodeId, {
+                ...nodeData,
+                organization_ids: organizationIds.length > 0 ? organizationIds : undefined,
+                user_metadata,
+                attached_data: attachedData.length > 0 ? attachedData : undefined,
+            })
+            onClose()
+        }
     }
-  }
 
-  const handleClose = () => {
-    setNewIdInput('')
-    onClose()
-  }
+    const handleClose = () => {
+        setNewIdInput('')
+        onClose()
+    }
 
-  if (!nodeData || !nodeId) return null
+    if (!nodeData || !nodeId) return null
 
-  return (
-    <DialogRoot
-      isOpen={isOpen}
-      onIsOpenChange={(open) => {
-        if (!open) handleClose()
-      }}
-      isModal
-    >
-      <Dialog
-        titleElement={t('nodeSettingsTitle')}
-        description={nodeData.name}
-        onClose={handleClose}
-      >
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('organizationIds')}
-            </span>
-            <div className="flex gap-2">
-              <Input
-                aria-label={t('addOrganizationIdPlaceholder')}
-                value={newIdInput}
-                onValueChange={setNewIdInput}
-                onEditComplete={(v) => {
-                  if (v?.trim()) handleAdd()
-                }}
-                placeholder={t('addOrganizationIdPlaceholder')}
-              />
-              <Button size="sm" onClick={handleAdd} disabled={!newIdInput.trim()}>
-                {t('add')}
-              </Button>
-            </div>
-            {organizationIds.length > 0 && (
-              <ul className="flex flex-col gap-1.5 max-h-[200px] overflow-auto rounded border border-gray-200 dark:border-gray-600 p-2">
-                {organizationIds.map((id, index) => (
-                  <li
-                    key={`${id}-${index}`}
-                    className="flex items-center justify-between gap-2 rounded bg-gray-50 dark:bg-gray-800 px-2 py-1.5"
-                  >
-                    <span className="truncate text-sm font-mono">{id}</span>
+    const isUser = nodeData.type === 'USER'
+
+    return (
+        <Dialog
+            titleElement={t('nodeSettingsTitle')}
+            description={nodeData.name}
+            onClose={handleClose}
+            isOpen={isOpen}
+        >
+            <div className="flex flex-col gap-4">
+                {isUser && (
+                    <div className="flex flex-col gap-2">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {t('userMetadata')}
+                        </span>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <Input
+                                aria-label={t('email')}
+                                value={email}
+                                onValueChange={setEmail}
+                                placeholder={t('email')}
+                            />
+                            <Input
+                                aria-label={t('firstname')}
+                                value={firstname}
+                                onValueChange={setFirstname}
+                                placeholder={t('firstname')}
+                            />
+                            <Input
+                                aria-label={t('lastname')}
+                                value={lastname}
+                                onValueChange={setLastname}
+                                placeholder={t('lastname')}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{t('userRole')}</span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {USER_ROLES.map((r) => (
+                                    <button
+                                        key={r}
+                                        type="button"
+                                        onClick={() => setRole(role === r ? undefined : r)}
+                                        className="cursor-pointer rounded border-0 bg-transparent p-0"
+                                    >
+                                        <Chip size="sm" color={role === r ? 'primary' : 'neutral'}>
+                                            {t(roleLabelKey(r))}
+                                        </Chip>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1.5 border-t border-gray-200 dark:border-gray-600 pt-2">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{t('location')}</span>
+                            <Input
+                                aria-label={t('street')}
+                                value={street}
+                                onValueChange={setStreet}
+                                placeholder={t('street')}
+                            />
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                <Input
+                                    aria-label={t('city')}
+                                    value={city}
+                                    onValueChange={setCity}
+                                    placeholder={t('city')}
+                                />
+                                <Input
+                                    aria-label={t('country')}
+                                    value={country}
+                                    onValueChange={setCountry}
+                                    placeholder={t('country')}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('attachedData')}
+                    </span>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <Input
+                            aria-label={t('key')}
+                            value={newAttachKey}
+                            onValueChange={setNewAttachKey}
+                            placeholder={t('key')}
+                        />
+                        <Input
+                            aria-label={t('value')}
+                            value={newAttachValue}
+                            onValueChange={setNewAttachValue}
+                            placeholder={t('value')}
+                        />
+                    </div>
                     <Button
-                      size="sm"
-                      color="negative"
-                      coloringStyle="text"
-                      onClick={() => handleRemove(index)}
+                        size="sm"
+                        onClick={() => {
+                            const k = newAttachKey.trim()
+                            if (k && !attachedData.some((e) => e.key === k)) {
+                                setAttachedData((prev) => [...prev, { key: k, value: newAttachValue.trim() }])
+                                setNewAttachKey('')
+                                setNewAttachValue('')
+                            }
+                        }}
+                        disabled={!newAttachKey.trim()}
                     >
-                      {t('remove')}
+                        {t('add')}
                     </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button coloringStyle="text" onClick={handleClose}>
-              {t('cancel')}
-            </Button>
-            <Button onClick={handleSave}>
-              {t('save')}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
-    </DialogRoot>
-  )
+                    {attachedData.length > 0 && (
+                        <ul className="flex flex-col gap-1.5 max-h-[160px] overflow-auto rounded border border-gray-200 dark:border-gray-600 p-2">
+                            {attachedData.map((entry, index) => (
+                                <li
+                                    key={`${entry.key}-${index}`}
+                                    className="flex items-center justify-between gap-2 rounded bg-gray-50 dark:bg-gray-800 px-2 py-1.5 text-sm"
+                                >
+                                    <span className="truncate font-mono">{entry.key}</span>
+                                    <span className="truncate text-gray-600 dark:text-gray-400 max-w-[120px]">{entry.value}</span>
+                                    <Button
+                                        size="sm"
+                                        color="negative"
+                                        coloringStyle="text"
+                                        onClick={() => setAttachedData((prev) => prev.filter((_, i) => i !== index))}
+                                    >
+                                        {t('remove')}
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('organizationIds')}
+                    </span>
+                    <div className="flex gap-2">
+                        <Input
+                            aria-label={t('addOrganizationIdPlaceholder')}
+                            value={newIdInput}
+                            onValueChange={setNewIdInput}
+                            onEditComplete={(v) => {
+                                if (v?.trim()) handleAdd()
+                            }}
+                            placeholder={t('addOrganizationIdPlaceholder')}
+                        />
+                        <Button size="sm" onClick={handleAdd} disabled={!newIdInput.trim()}>
+                            {t('add')}
+                        </Button>
+                    </div>
+                    {organizationIds.length > 0 && (
+                        <ul className="flex flex-col gap-1.5 max-h-[200px] overflow-auto rounded border border-gray-200 dark:border-gray-600 p-2">
+                            {organizationIds.map((id, index) => (
+                                <li
+                                    key={`${id}-${index}`}
+                                    className="flex items-center justify-between gap-2 rounded bg-gray-50 dark:bg-gray-800 px-2 py-1.5"
+                                >
+                                    <span className="truncate text-sm font-mono">{id}</span>
+                                    <Button
+                                        size="sm"
+                                        color="negative"
+                                        coloringStyle="text"
+                                        onClick={() => handleRemove(index)}
+                                    >
+                                        {t('remove')}
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+                <div className="flex gap-2 justify-end">
+                    <Button coloringStyle="text" onClick={handleClose}>
+                        {t('cancel')}
+                    </Button>
+                    <Button onClick={handleSave}>
+                        {t('save')}
+                    </Button>
+                </div>
+            </div>
+        </Dialog>
+    )
 }

@@ -2,6 +2,12 @@
 @import "@helpwave/hightide/style/uncompiled/globals.css";
 @source "./node_modules/@helpwave/hightide";
 
+@layer components {
+  body {
+    @apply w-screen max-w-screen h-screen max-h-screen overflow-hidden;
+  }
+}
+
 @layer base {
     html, body, main {
         @apply bg-background text-on-background;
