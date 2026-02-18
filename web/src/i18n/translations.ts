@@ -1,5 +1,7 @@
 // AUTO-GENERATED. DO NOT EDIT.
 /* eslint-disable @stylistic/quote-props */
+
+
 import type { Translation } from '@helpwave/internationalization'
 
 export const scaffoldTranslationLocales = ['de-DE', 'en-US'] as const

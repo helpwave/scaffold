@@ -259,15 +259,19 @@ function GraphEditorInner({
       }
       if (event.key === 'Delete' || event.key === 'Backspace') {
         const hasSelectedEdges = edges.some((e) => e.selected)
+        const selectedNodes = nodes.filter((n) => n.selected)
         if (hasSelectedEdges) {
           event.preventDefault()
           removeSelectedEdges()
+        } else if (selectedNodes.length === 1 && selectedNodes[0].id !== ROOT_ORG_ID) {
+          event.preventDefault()
+          setDeleteConfirmNodeId(selectedNodes[0].id)
         }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [edges, removeSelectedEdges])
+  }, [edges, nodes, removeSelectedEdges])
 
   const handleConnectionSettingsSave = useCallback(
     (edgeId: string, data: ScaffoldEdgeData) => {
@@ -334,6 +338,7 @@ function GraphEditorInner({
           onNodeDoubleClick={(_event, node) => setSettingsNodeId(node.id)}
           onEdgeDoubleClick={(_event, edge) => setSettingsEdgeId(edge.id)}
           elementsSelectable
+          nodeDragThreshold={0}
           isValidConnection={isValidConnection}
           nodeTypes={nodeTypes}
           defaultEdgeOptions={{ style: { strokeWidth: 2.5 }, data: {} }}
