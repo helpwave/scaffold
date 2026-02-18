@@ -23,7 +23,7 @@ import type { ScaffoldTranslationEntries } from '../i18n/translations'
 import { isScaffoldNodeType, ROOT_ORG_ID, SCAFFOLD_DRAG_TYPE } from '../types/scaffold'
 import type { ScaffoldEdgeData } from '../types/scaffold'
 import type { ScaffoldNodeData } from '../lib/scaffoldGraph'
-import { getParentByEdges, isNodeVisible } from '../lib/scaffoldGraph'
+import { getParentsByEdges, isNodeVisible } from '../lib/scaffoldGraph'
 import { ScaffoldNode } from './ScaffoldNode'
 import { NamePopUp } from './NamePopUp'
 import { NodeSettingsDialog } from './NodeSettingsDialog'
@@ -71,14 +71,14 @@ function GraphEditorInner({
   const t = useScaffoldTranslation()
   const { screenToFlowPosition, fitView, zoomIn, zoomOut } = useReactFlow()
 
-  const parentByChild = useMemo(() => getParentByEdges(edges), [edges])
+  const parentsByChild = useMemo(() => getParentsByEdges(edges), [edges])
   const visibleIdSet = useMemo(() => {
     const set = new Set<string>()
     for (const n of nodes) {
-      if (isNodeVisible(n.id, collapsedNodeIds, parentByChild)) set.add(n.id)
+      if (isNodeVisible(n.id, collapsedNodeIds, parentsByChild)) set.add(n.id)
     }
     return set
-  }, [nodes, collapsedNodeIds, parentByChild])
+  }, [nodes, collapsedNodeIds, parentsByChild])
   const visibleNodes = useMemo(
     () => nodes.filter((n) => visibleIdSet.has(n.id)),
     [nodes, visibleIdSet]
@@ -208,12 +208,17 @@ function GraphEditorInner({
       if (sourceNode?.data?.type === 'USER') return false
       if (targetNode?.data?.type === 'ORGANIZATION') return false
       const targetId = target
-      const hasIncoming = edges.some((e) => e.target === targetId)
+      const isUserTarget = targetNode?.data?.type === 'USER'
+      const hasIncoming = !isUserTarget && edges.some((e) => e.target === targetId)
       if (hasIncoming) {
         setTreeError(t('eachNodeOneParent'))
         return false
       }
       if (!targetNode) return false
+      if (isUserTarget) {
+        setTreeError(null)
+        return true
+      }
       const visited = new Set<string>()
       const hasCycle = (node: Node<ScaffoldNodeData>): boolean => {
         if (node.id === source) return true
@@ -235,9 +240,11 @@ function GraphEditorInner({
   const onConnect = useCallback(
     (params: Connection) => {
       setTreeError(null)
-      setEdges((eds) => addEdge({ ...params, data: {} }, eds))
+      const targetNode = nodes.find((n) => n.id === params.target)
+      const data = targetNode?.data?.type === 'USER' ? { role: 'viewer' as const } : {}
+      setEdges((eds) => addEdge({ ...params, data }, eds))
     },
-    [setEdges, setTreeError]
+    [nodes, setEdges, setTreeError]
   )
 
   const removeSelectedEdges = useCallback(() => {
@@ -296,7 +303,9 @@ function GraphEditorInner({
 
   const edgesWithRoleStyle = useMemo(() => {
     return visibleEdges.map((e: ScaffoldEdge) => {
-      const role = e.data?.role
+      const targetNode = visibleNodes.find((n) => n.id === e.target)
+      const isUserConnection = targetNode?.data?.type === 'USER'
+      const role = e.data?.role ?? (isUserConnection ? 'viewer' : undefined)
       const stroke = e.selected ? PRIMARY_STROKE : roleStroke(role)
       return {
         ...e,
@@ -307,7 +316,7 @@ function GraphEditorInner({
         },
       }
     })
-  }, [visibleEdges])
+  }, [visibleEdges, visibleNodes])
 
   return (
     <NodeActionsContext.Provider value={nodeActionsValue}>

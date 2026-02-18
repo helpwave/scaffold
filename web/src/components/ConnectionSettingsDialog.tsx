@@ -36,7 +36,7 @@ export function ConnectionSettingsDialog({
   onDelete,
 }: ConnectionSettingsDialogProps) {
   const t = useScaffoldTranslation()
-  const [role, setRole] = useState<UserRole | undefined>(undefined)
+  const [role, setRole] = useState<UserRole>('viewer')
   const [attributes, setAttributes] = useState<AttachedDataEntry[]>([])
   const [newAttachKey, setNewAttachKey] = useState('')
   const [newAttachValue, setNewAttachValue] = useState('')
@@ -45,7 +45,7 @@ export function ConnectionSettingsDialog({
 
   useEffect(() => {
     if (isOpen && edgeData) {
-      setRole(edgeData.role)
+      setRole(edgeData.role ?? 'viewer')
       setAttributes(edgeData.attributes ?? [])
       setNewAttachKey('')
       setNewAttachValue('')
@@ -55,7 +55,7 @@ export function ConnectionSettingsDialog({
   const handleSave = () => {
     if (edgeId) {
       onSave(edgeId, {
-        ...(isRoleAssignment ? { role } : {}),
+        ...(isRoleAssignment ? { role: role ?? 'viewer' } : {}),
         ...(attributes.length > 0 ? { attributes } : {}),
       })
       onClose()
@@ -91,7 +91,7 @@ export function ConnectionSettingsDialog({
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setRole(role === r ? undefined : r)}
+                  onClick={() => setRole(r)}
                   className="cursor-pointer rounded border-0 bg-transparent p-0"
                   title={t(roleLabelKey(r))}
                 >

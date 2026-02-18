@@ -1,7 +1,5 @@
 // AUTO-GENERATED. DO NOT EDIT.
 /* eslint-disable @stylistic/quote-props */
-
-
 import type { Translation } from '@helpwave/internationalization'
 
 export const scaffoldTranslationLocales = ['de-DE', 'en-US'] as const
@@ -53,10 +51,10 @@ export type ScaffoldTranslationEntries = {
   'nodeType_NETWORK': string,
   'nodeType_ORGANIZATION': string,
   'nodeType_PRACTICE': string,
+  'nodeType_ROLE': string,
   'nodeType_ROOM': string,
   'nodeType_TEAM': string,
   'nodeType_USER': string,
-  'nodeType_ROLE': string,
   'nodeType_WARD': string,
   'nodeTypes': string,
   'onlyOnDesktop': string,
@@ -125,10 +123,10 @@ export const scaffoldTranslation: Translation<ScaffoldTranslationLocales, Partia
     'nodeType_NETWORK': `Netzwerk`,
     'nodeType_ORGANIZATION': `Organisation`,
     'nodeType_PRACTICE': `Praxis`,
+    'nodeType_ROLE': `Rolle`,
     'nodeType_ROOM': `Raum`,
     'nodeType_TEAM': `Team`,
     'nodeType_USER': `Benutzer`,
-    'nodeType_ROLE': `Rolle`,
     'nodeType_WARD': `Station`,
     'nodeTypes': `Knotentypen`,
     'onlyOnDesktop': `Nur auf Desktop-Geräten`,
@@ -195,10 +193,10 @@ export const scaffoldTranslation: Translation<ScaffoldTranslationLocales, Partia
     'nodeType_NETWORK': `Network`,
     'nodeType_ORGANIZATION': `Organization`,
     'nodeType_PRACTICE': `Practice`,
+    'nodeType_ROLE': `Role`,
     'nodeType_ROOM': `Room`,
     'nodeType_TEAM': `Team`,
     'nodeType_USER': `User`,
-    'nodeType_ROLE': `Role`,
     'nodeType_WARD': `Ward`,
     'nodeTypes': `Node types`,
     'onlyOnDesktop': `Only on desktop devices`,

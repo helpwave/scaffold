@@ -3,10 +3,21 @@ import type { Node, Edge } from '@xyflow/react'
 import type { AttachedDataEntry, ScaffoldNodeType, TreeNode, UserMetadata } from '../types/scaffold'
 import { ROOT_ORG_ID } from '../types/scaffold'
 
-export function getParentByEdges(edges: Edge[]): Map<string, string> {
-    const parentByChild = new Map<string, string>()
+export function getParentsByEdges(edges: Edge[]): Map<string, string[]> {
+    const parentsByChild = new Map<string, string[]>()
     for (const e of edges) {
-        parentByChild.set(e.target, e.source)
+        const list = parentsByChild.get(e.target) ?? []
+        list.push(e.source)
+        parentsByChild.set(e.target, list)
+    }
+    return parentsByChild
+}
+
+export function getParentByEdges(edges: Edge[]): Map<string, string> {
+    const parentsByChild = getParentsByEdges(edges)
+    const parentByChild = new Map<string, string>()
+    for (const [child, parents] of parentsByChild) {
+        if (parents.length > 0) parentByChild.set(child, parents[0])
     }
     return parentByChild
 }
@@ -14,13 +25,14 @@ export function getParentByEdges(edges: Edge[]): Map<string, string> {
 export function isNodeVisible(
     nodeId: string,
     collapsedIds: ReadonlySet<string>,
-    parentByChild: Map<string, string>
+    parentsByChild: Map<string, string[]>
 ): boolean {
     if (nodeId === ROOT_ORG_ID) return true
-    const parent = parentByChild.get(nodeId)
-    if (!parent) return true
-    if (collapsedIds.has(parent)) return false
-    return isNodeVisible(parent, collapsedIds, parentByChild)
+    const parents = parentsByChild.get(nodeId)
+    if (!parents || parents.length === 0) return true
+    return parents.some(
+        (p) => !collapsedIds.has(p) && isNodeVisible(p, collapsedIds, parentsByChild)
+    )
 }
 
 export function getInitialCollapsedForImport(
@@ -35,6 +47,26 @@ export function getInitialCollapsedForImport(
         }
     }
     return collapsed
+}
+
+export function ensureOrphansUnderRoot(
+    nodes: Node<ScaffoldNodeData>[],
+    edges: Edge[]
+): Edge[] {
+    const hasRoot = nodes.some((n) => n.id === ROOT_ORG_ID)
+    if (!hasRoot) return edges
+    const targetsWithParent = new Set(edges.map((e) => e.target))
+    const extraEdges: Edge[] = []
+    for (const n of nodes) {
+        if (n.id !== ROOT_ORG_ID && !targetsWithParent.has(n.id)) {
+            extraEdges.push({
+                id: `e-${ROOT_ORG_ID}-${n.id}`,
+                source: ROOT_ORG_ID,
+                target: n.id,
+            })
+        }
+    }
+    return extraEdges.length === 0 ? edges : [...edges, ...extraEdges]
 }
 
 const NODE_TYPE_TO_CHIP_COLOR: Record<ScaffoldNodeType, ChipColor> = {
@@ -142,6 +174,8 @@ function layoutTree(
     return { width: totalWidth, height: blockHeight }
 }
 
+const ROOT_NODE_WIDTH = 180
+
 export function treeToFlow(tree: TreeNode | TreeNode[]): {
     nodes: Node<ScaffoldNodeData>[],
     edges: Edge[],
@@ -151,11 +185,19 @@ export function treeToFlow(tree: TreeNode | TreeNode[]): {
     const edges: Edge[] = []
     const idByPath = new Map<string, string>()
     let x = 0
+    let firstRootWidth: number | null = null
     for (let i = 0; i < roots.length; i++) {
         const root = roots[i]
         const path = `${i}`
         const { width } = layoutTree(root, x, 0, nodes, edges, idByPath, path)
+        if (firstRootWidth === null) firstRootWidth = width
         x += width + HORIZONTAL_GAP
+    }
+    if (firstRootWidth !== null) {
+        const offsetX = firstRootWidth / 2 - ROOT_NODE_WIDTH / 2
+        for (const n of nodes) {
+            n.position = { x: n.position.x + offsetX, y: n.position.y }
+        }
     }
     return { nodes, edges }
 }

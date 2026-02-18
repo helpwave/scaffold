@@ -6,7 +6,7 @@ import { useScaffoldTranslation } from './i18n/ScaffoldTranslationContext'
 import { GraphEditor, type ScaffoldEdge } from './components/GraphEditor'
 import { Sidebar } from './components/Sidebar'
 import type { ScaffoldNodeData } from './lib/scaffoldGraph'
-import { flowToTree, downloadAsJson, getRootOrganizationNode, getInitialCollapsedForImport } from './lib/scaffoldGraph'
+import { flowToTree, downloadAsJson, getRootOrganizationNode, getInitialCollapsedForImport, ensureOrphansUnderRoot } from './lib/scaffoldGraph'
 import { loadStoredState, saveStoredState, clearStoredState } from './lib/storage'
 import { ROOT_ORG_ID } from './types/scaffold'
 
@@ -83,7 +83,10 @@ function App() {
   const handleImport = useCallback(
     (newNodes: Node<ScaffoldNodeData>[], newEdges: ScaffoldEdge[]) => {
       const normalizedNodes = ensureRootOrgInNodes(newNodes)
-      const normalizedEdges = ensureRootOrgInEdges(newEdges, newNodes)
+      const normalizedEdges = ensureOrphansUnderRoot(
+        normalizedNodes,
+        ensureRootOrgInEdges(newEdges, newNodes)
+      )
       setNodes(normalizedNodes)
       setEdges(normalizedEdges)
       setCollapsedNodeIds(() => getInitialCollapsedForImport(normalizedNodes, normalizedEdges))
