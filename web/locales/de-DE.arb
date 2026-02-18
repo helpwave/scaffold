@@ -67,5 +67,15 @@
   "connectionType": "Verbindungstyp",
   "connectionType_default": "Standard",
   "connectionType_reference": "Referenz",
-  "connectionType_dependency": "Abhängigkeit"
+  "connectionType_dependency": "Abhängigkeit",
+  "expandSubtree": "Erweitern",
+  "collapseSubtree": "Einklappen",
+  "childrenCount": "{count} Unterknoten",
+  "@childrenCount": {
+    "placeholders": {
+      "count": {
+        "type": "number"
+      }
+    }
+  }
 }

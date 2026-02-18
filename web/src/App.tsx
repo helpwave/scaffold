@@ -6,7 +6,7 @@ import { useScaffoldTranslation } from './i18n/ScaffoldTranslationContext'
 import { GraphEditor, type ScaffoldEdge } from './components/GraphEditor'
 import { Sidebar } from './components/Sidebar'
 import type { ScaffoldNodeData } from './lib/scaffoldGraph'
-import { flowToTree, downloadAsJson, getRootOrganizationNode } from './lib/scaffoldGraph'
+import { flowToTree, downloadAsJson, getRootOrganizationNode, getInitialCollapsedForImport } from './lib/scaffoldGraph'
 import { loadStoredState, saveStoredState, clearStoredState } from './lib/storage'
 import { ROOT_ORG_ID } from './types/scaffold'
 
@@ -47,6 +47,7 @@ function App() {
   const [importError, setImportError] = useState<string | null>(null)
   const [themeDialogOpen, setThemeDialogOpen] = useState(false)
   const [localeDialogOpen, setLocaleDialogOpen] = useState(false)
+  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set())
   const initDone = useRef(false)
   const fitViewRef = useRef<(() => void) | null>(null)
 
@@ -85,6 +86,7 @@ function App() {
       const normalizedEdges = ensureRootOrgInEdges(newEdges, newNodes)
       setNodes(normalizedNodes)
       setEdges(normalizedEdges)
+      setCollapsedNodeIds(() => getInitialCollapsedForImport(normalizedNodes, normalizedEdges))
       requestAnimationFrame(() => {
         requestAnimationFrame(() => fitViewRef.current?.())
       })
@@ -95,6 +97,7 @@ function App() {
   const handleClear = () => {
     setNodes(() => [getRootOrganizationNode()])
     setEdges([])
+    setCollapsedNodeIds(new Set())
     setTreeError(null)
     setImportError(null)
     clearStoredState()
@@ -137,6 +140,8 @@ function App() {
               treeError={treeError}
               setTreeError={setTreeError}
               fitViewRef={fitViewRef}
+              collapsedNodeIds={collapsedNodeIds}
+              setCollapsedNodeIds={setCollapsedNodeIds}
               onOpenThemeDialog={() => setThemeDialogOpen(true)}
               onOpenLocaleDialog={() => setLocaleDialogOpen(true)}
             />

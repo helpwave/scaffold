@@ -3,6 +3,40 @@ import type { Node, Edge } from '@xyflow/react'
 import type { AttachedDataEntry, ScaffoldNodeType, TreeNode, UserMetadata } from '../types/scaffold'
 import { ROOT_ORG_ID } from '../types/scaffold'
 
+export function getParentByEdges(edges: Edge[]): Map<string, string> {
+    const parentByChild = new Map<string, string>()
+    for (const e of edges) {
+        parentByChild.set(e.target, e.source)
+    }
+    return parentByChild
+}
+
+export function isNodeVisible(
+    nodeId: string,
+    collapsedIds: ReadonlySet<string>,
+    parentByChild: Map<string, string>
+): boolean {
+    if (nodeId === ROOT_ORG_ID) return true
+    const parent = parentByChild.get(nodeId)
+    if (!parent) return true
+    if (collapsedIds.has(parent)) return false
+    return isNodeVisible(parent, collapsedIds, parentByChild)
+}
+
+export function getInitialCollapsedForImport(
+    nodes: Node<ScaffoldNodeData>[],
+    edges: Edge[]
+): Set<string> {
+    const rootDirectChildIds = new Set(edges.filter((e) => e.source === ROOT_ORG_ID).map((e) => e.target))
+    const collapsed = new Set<string>()
+    for (const n of nodes) {
+        if (n.id !== ROOT_ORG_ID && !rootDirectChildIds.has(n.id)) {
+            collapsed.add(n.id)
+        }
+    }
+    return collapsed
+}
+
 const NODE_TYPE_TO_CHIP_COLOR: Record<ScaffoldNodeType, ChipColor> = {
     ORGANIZATION: 'primary',
     NETWORK: 'secondary',

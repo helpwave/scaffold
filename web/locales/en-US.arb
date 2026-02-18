@@ -67,5 +67,15 @@
   "connectionType": "Connection type",
   "connectionType_default": "Default",
   "connectionType_reference": "Reference",
-  "connectionType_dependency": "Dependency"
+  "connectionType_dependency": "Dependency",
+  "expandSubtree": "Expand",
+  "collapseSubtree": "Collapse",
+  "childrenCount": "{count} children",
+  "@childrenCount": {
+    "placeholders": {
+      "count": {
+        "type": "number"
+      }
+    }
+  }
 }

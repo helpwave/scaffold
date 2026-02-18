@@ -15,7 +15,7 @@ import {
   ReactFlowProvider,
   Panel
 } from '@xyflow/react'
-import { IconButton, useTheme } from '@helpwave/hightide'
+import { ConfirmDialog, IconButton, useTheme } from '@helpwave/hightide'
 import { Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
 import '@xyflow/react/dist/style.css'
 import { useScaffoldTranslation } from '../i18n/ScaffoldTranslationContext'
@@ -23,6 +23,7 @@ import type { ScaffoldTranslationEntries } from '../i18n/translations'
 import { isScaffoldNodeType, ROOT_ORG_ID, SCAFFOLD_DRAG_TYPE } from '../types/scaffold'
 import type { ScaffoldEdgeData } from '../types/scaffold'
 import type { ScaffoldNodeData } from '../lib/scaffoldGraph'
+import { getParentByEdges, isNodeVisible } from '../lib/scaffoldGraph'
 import { ScaffoldNode } from './ScaffoldNode'
 import { NamePopUp } from './NamePopUp'
 import { NodeSettingsDialog } from './NodeSettingsDialog'
@@ -48,6 +49,8 @@ interface GraphEditorInnerProps {
   treeError: string | null,
   setTreeError: (msg: string | null) => void,
   fitViewRef?: MutableRefObject<(() => void) | null>,
+  collapsedNodeIds: ReadonlySet<string>,
+  setCollapsedNodeIds: (payload: Set<string> | ((prev: Set<string>) => Set<string>)) => void,
   onOpenThemeDialog?: () => void,
   onOpenLocaleDialog?: () => void,
 }
@@ -60,11 +63,37 @@ function GraphEditorInner({
   treeError,
   setTreeError,
   fitViewRef,
+  collapsedNodeIds,
+  setCollapsedNodeIds,
   onOpenThemeDialog,
   onOpenLocaleDialog,
 }: GraphEditorInnerProps) {
   const t = useScaffoldTranslation()
   const { screenToFlowPosition, fitView, zoomIn, zoomOut } = useReactFlow()
+
+  const parentByChild = useMemo(() => getParentByEdges(edges), [edges])
+  const visibleIdSet = useMemo(() => {
+    const set = new Set<string>()
+    for (const n of nodes) {
+      if (isNodeVisible(n.id, collapsedNodeIds, parentByChild)) set.add(n.id)
+    }
+    return set
+  }, [nodes, collapsedNodeIds, parentByChild])
+  const visibleNodes = useMemo(
+    () => nodes.filter((n) => visibleIdSet.has(n.id)),
+    [nodes, visibleIdSet]
+  )
+  const visibleEdges = useMemo(
+    () => edges.filter((e) => visibleIdSet.has(e.source) && visibleIdSet.has(e.target)),
+    [edges, visibleIdSet]
+  )
+  const childCountByNode = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const e of edges) {
+      map.set(e.source, (map.get(e.source) ?? 0) + 1)
+    }
+    return map
+  }, [edges])
 
   useEffect(() => {
     if (fitViewRef) {
@@ -79,6 +108,7 @@ function GraphEditorInner({
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
   const [settingsNodeId, setSettingsNodeId] = useState<string | null>(null)
   const [settingsEdgeId, setSettingsEdgeId] = useState<string | null>(null)
+  const [deleteConfirmNodeId, setDeleteConfirmNodeId] = useState<string | null>(null)
   const isDark = resolvedTheme === 'dark'
 
   const settingsEdge = settingsEdgeId ? edges.find((e) => e.id === settingsEdgeId) : null
@@ -93,10 +123,24 @@ function GraphEditorInner({
 
   const nodeTypes = useMemo<NodeTypes>(() => ({ scaffold: ScaffoldNode }), [])
 
-  const nodeActionsValue: NodeActionsContextValue = {
-    onEditNode: setSettingsNodeId,
-    isRootOrgNode: (id) => id === ROOT_ORG_ID,
-  }
+  const nodeActionsValue: NodeActionsContextValue = useMemo(
+    () => ({
+      onEditNode: setSettingsNodeId,
+      onRequestDeleteNode: setDeleteConfirmNodeId,
+      isRootOrgNode: (id) => id === ROOT_ORG_ID,
+      getChildCount: (id) => childCountByNode.get(id) ?? 0,
+      isCollapsed: (id) => collapsedNodeIds.has(id),
+      onExpand: (id) =>
+        setCollapsedNodeIds((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        }),
+      onCollapse: (id) =>
+        setCollapsedNodeIds((prev) => new Set(prev).add(id)),
+    }),
+    [childCountByNode, collapsedNodeIds, setCollapsedNodeIds]
+  )
 
   const handleDeleteNode = useCallback(
     (nodeId: string) => {
@@ -237,9 +281,9 @@ function GraphEditorInner({
 
   const nodesWithRootLocked = useMemo(
     () =>
-      nodes.map((n) =>
+      visibleNodes.map((n) =>
         n.id === ROOT_ORG_ID ? { ...n, draggable: false } : n),
-    [nodes]
+    [visibleNodes]
   )
 
   const PRIMARY_STROKE = '#6366f1'
@@ -251,7 +295,7 @@ function GraphEditorInner({
   }
 
   const edgesWithRoleStyle = useMemo(() => {
-    return edges.map((e: ScaffoldEdge) => {
+    return visibleEdges.map((e: ScaffoldEdge) => {
       const role = e.data?.role
       const stroke = e.selected ? PRIMARY_STROKE : roleStroke(role)
       return {
@@ -263,7 +307,7 @@ function GraphEditorInner({
         },
       }
     })
-  }, [edges])
+  }, [visibleEdges])
 
   return (
     <NodeActionsContext.Provider value={nodeActionsValue}>
@@ -342,6 +386,19 @@ function GraphEditorInner({
           onSave={handleConnectionSettingsSave}
           onDelete={handleDeleteEdge}
         />
+        <ConfirmDialog
+          isOpen={deleteConfirmNodeId !== null}
+          onConfirm={() => {
+            if (deleteConfirmNodeId) {
+              handleDeleteNode(deleteConfirmNodeId)
+              setDeleteConfirmNodeId(null)
+            }
+          }}
+          onCancel={() => setDeleteConfirmNodeId(null)}
+          titleElement={t('deleteNodeTitle')}
+          description={t('deleteNodeDescription')}
+          confirmType="negative"
+        />
       </div>
     </NodeActionsContext.Provider>
   )
@@ -355,6 +412,8 @@ export interface GraphEditorProps {
   treeError: string | null,
   setTreeError: (msg: string | null) => void,
   fitViewRef?: MutableRefObject<(() => void) | null>,
+  collapsedNodeIds: ReadonlySet<string>,
+  setCollapsedNodeIds: (payload: Set<string> | ((prev: Set<string>) => Set<string>)) => void,
   onOpenThemeDialog?: () => void,
   onOpenLocaleDialog?: () => void,
 }
